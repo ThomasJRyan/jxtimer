@@ -1,8 +1,8 @@
 [package]
-name = "global_timer"
-version = "0.1.0"
+name = "JXTimer"
+version = "1.0.0"
 edition = "2021"
-description = "A focused native desktop timer built with eframe and egui"
+description = "A native desktop timer built with eframe and egui"
 license = "MIT"
 
 [dependencies]
