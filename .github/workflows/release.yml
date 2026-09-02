@@ -62,15 +62,6 @@ jobs:
           - runner: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             archive: tar.gz
-          - runner: windows-latest
-            target: x86_64-pc-windows-msvc
-            archive: zip
-          - runner: macos-13
-            target: x86_64-apple-darwin
-            archive: tar.gz
-          - runner: macos-14
-            target: aarch64-apple-darwin
-            archive: tar.gz
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -90,17 +81,6 @@ jobs:
           cp "target/${{ matrix.target }}/release/JXTimer" "$stage/JXTimer"
           cp README.md LICENSE "$stage/"
           tar -C "$stage" -czf "$archive_name" JXTimer README.md LICENSE
-
-      - name: Package Windows archive
-        if: matrix.archive == 'zip'
-        shell: pwsh
-        run: |
-          $archiveName = "$env:APP_NAME-$env:VERSION-${{ matrix.target }}.zip"
-          $stage = Join-Path $env:RUNNER_TEMP "$env:APP_NAME-$env:VERSION-${{ matrix.target }}"
-          New-Item -ItemType Directory -Force -Path $stage | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/JXTimer.exe" (Join-Path $stage "JXTimer.exe")
-          Copy-Item README.md, LICENSE -Destination $stage
-          Compress-Archive -Path (Join-Path $stage "JXTimer.exe"), (Join-Path $stage "README.md"), (Join-Path $stage "LICENSE") -DestinationPath $archiveName
 
       - name: Upload release archive
         uses: actions/upload-artifact@v4
