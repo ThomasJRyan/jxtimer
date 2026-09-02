@@ -6,9 +6,10 @@ A compact native desktop timer for stream overlays.
 
 ## Screenshots
 
-[JXTimer timer](docs/screenshots/timer.png)
-[JXTimer streamer mode](docs/screenshots/timer_streamer.png)
-[JXTimer settings](docs/screenshots/settings.png)
+![JXTimer timer](docs/screenshots/timer.png)
+![JXTimer streamer mode](docs/screenshots/timer_streamer.png)
+
+![JXTimer settings](docs/screenshots/settings.png)
 
 ## Features
 
