@@ -110,4 +110,5 @@ jobs:
         working-directory: dist
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: gh release create "$VERSION" JXTimer-* SHA256SUMS.txt --generate-notes --title "JXTimer $VERSION"
