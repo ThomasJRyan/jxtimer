@@ -1,0 +1,7 @@
+/target/
+
+# Local agent and planning artifacts
+/.impeccable/
+/.opencode/
+/openspec/
+/PRODUCT.md
