@@ -2,6 +2,8 @@
 
 A compact native desktop timer for stream overlays.
 
+> **AI disclosure:** This project was made entirely with AI-generated code.
+
 ## Screenshots
 
 <!--
