@@ -30,7 +30,25 @@ jobs:
       - name: Select stable Rust
         run: rustup toolchain install stable --profile minimal && rustup default stable
 
+      - name: Install software Vulkan driver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvulkan1 mesa-vulkan-drivers vulkan-tools
+
+      - name: Configure lavapipe
+        shell: bash
+        run: |
+          icd_file="$(find /usr/share/vulkan/icd.d -type f -name 'lvp_icd*.json' -print -quit)"
+          if [ -z "$icd_file" ]; then
+            echo "No lavapipe Vulkan ICD was found" >&2
+            exit 1
+          fi
+          echo "VK_DRIVER_FILES=$icd_file" >> "$GITHUB_ENV"
+          echo "VK_ICD_FILENAMES=$icd_file" >> "$GITHUB_ENV"
+
       - name: Run tests
+        env:
+          WGPU_BACKEND: vulkan
         run: cargo test --locked --all -- --nocapture --test-threads=1
 
   build:
