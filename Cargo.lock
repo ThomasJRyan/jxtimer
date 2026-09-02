@@ -1364,8 +1364,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "global_timer"
-version = "0.1.0"
+name = "JXTimer"
+version = "1.0.0"
 dependencies = [
  "accesskit",
  "dirs",
