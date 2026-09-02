@@ -1,0 +1,115 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release tag/version
+        required: false
+        default: v1.0.0
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  APP_NAME: JXTimer
+  VERSION: ${{ inputs.version || github.ref_name }}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Select stable Rust
+        run: rustup toolchain install stable --profile minimal && rustup default stable
+
+      - name: Run tests
+        run: cargo test --locked --all -- --nocapture --test-threads=1
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs: test
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: tar.gz
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: zip
+          - runner: macos-13
+            target: x86_64-apple-darwin
+            archive: tar.gz
+          - runner: macos-14
+            target: aarch64-apple-darwin
+            archive: tar.gz
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Select stable Rust
+        run: rustup toolchain install stable --profile minimal && rustup default stable
+
+      - name: Build release binary
+        run: cargo build --locked --release --target "${{ matrix.target }}"
+
+      - name: Package Unix archive
+        if: matrix.archive == 'tar.gz'
+        run: |
+          archive_name="${APP_NAME}-${VERSION}-${{ matrix.target }}.tar.gz"
+          stage="${RUNNER_TEMP}/${APP_NAME}-${VERSION}-${{ matrix.target }}"
+          mkdir -p "$stage"
+          cp "target/${{ matrix.target }}/release/JXTimer" "$stage/JXTimer"
+          cp README.md LICENSE "$stage/"
+          tar -C "$stage" -czf "$archive_name" JXTimer README.md LICENSE
+
+      - name: Package Windows archive
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          $archiveName = "$env:APP_NAME-$env:VERSION-${{ matrix.target }}.zip"
+          $stage = Join-Path $env:RUNNER_TEMP "$env:APP_NAME-$env:VERSION-${{ matrix.target }}"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/JXTimer.exe" (Join-Path $stage "JXTimer.exe")
+          Copy-Item README.md, LICENSE -Destination $stage
+          Compress-Archive -Path (Join-Path $stage "JXTimer.exe"), (Join-Path $stage "README.md"), (Join-Path $stage "LICENSE") -DestinationPath $archiveName
+
+      - name: Upload release archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-${{ env.VERSION }}-${{ matrix.target }}
+          path: ${{ env.APP_NAME }}-${{ env.VERSION }}-${{ matrix.target }}.${{ matrix.archive }}
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release archives
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create checksums
+        working-directory: dist
+        run: sha256sum JXTimer-* > SHA256SUMS.txt
+
+      - name: Create GitHub Release
+        working-directory: dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$VERSION" JXTimer-* SHA256SUMS.txt --generate-notes --title "JXTimer $VERSION"
